@@ -37,8 +37,8 @@ class WatsonVisualRecognition3 @Inject() (ws: WSClient, conf: Configuration) {
     apiKey: String,
     apiVersion: String,
     imageFile: Path,
-    additionalJsonParm: Option[Path],
-    acceptLang: Option[AcceptLanguage]
+    additionalJsonParm: Option[Path] = None,
+    acceptLang: Option[AcceptLanguage] = None
   ): Future[Try[ClassifyResponse]] = {
     acceptLang.foldLeft(
       ws.url(Url + "/v3/classify?api_key=" + apiKey + "&version=" + apiVersion)
@@ -93,9 +93,12 @@ object ClassifyResponse {
   def fromResponse(resp: WSResponse): Try[ClassifyResponse] = {
     Logger.info("Watson visual recognition status = " + resp.status + ", statusText = '" + resp.statusText + "'")
     if (resp.status != 200) Failure(new WatsonException("Watson Visual Recognition", resp.status, resp.statusText))
-    else Success(
-      ClassifyResponse.fromString(resp.body)
-    )
+    else {
+      Logger.info("Watson json response: '" + resp.body + "'")
+      Success(
+        ClassifyResponse.fromString(resp.body)
+      )
+    }
   }
 
   def fromString(body: String): ClassifyResponse = Json.parse(body).as[ClassifyResponse]
