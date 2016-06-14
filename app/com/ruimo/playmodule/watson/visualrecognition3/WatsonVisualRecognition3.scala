@@ -42,49 +42,49 @@ class WatsonVisualRecognition3 @Inject() (ws: WSClient, conf: Configuration) {
     acceptLang: Option[AcceptLanguage] = None
   ): Future[Try[ClassifyResponse]] = {
     // Temporary solution. Watson visual recognition classify API report error if there is no content-length header...
-    scala.concurrent.Future {
-      val cmd =
-        s"""curl -X POST -F images_file=@${imageFile.toAbsolutePath} """ +
-      additionalJsonParm.map { pf => s"""-F parameters=@${pf.toAbsolutePath}"""}.getOrElse("") +
-      s""" ${Url}/v3/classify?api_key=${apiKey}&version=${apiVersion}"""
-      Logger.info("Invoking '" + cmd + "'")
+//    scala.concurrent.Future {
+//      val cmd =
+//        s"""curl -X POST -F images_file=@${imageFile.toAbsolutePath} """ +
+//      additionalJsonParm.map { pf => s"""-F parameters=@${pf.toAbsolutePath}"""}.getOrElse("") +
+//      s""" ${Url}/v3/classify?api_key=${apiKey}&version=${apiVersion}"""
+//      Logger.info("Invoking '" + cmd + "'")
+//
+//      withTempFile(prefix = None, suffix = Some(".json")) { outFile =>
+//        (Process(cmd) #> outFile.toFile run) exitValue()
+//
+//        val json = new String(Files.readAllBytes(outFile), "utf-8")
+//        Logger.info("Watson response: '" + json + "'")
+//        ClassifyResponse.fromString(json)
+//      }
+//    }
 
-      withTempFile(prefix = None, suffix = Some(".json")) { outFile =>
-        (Process(cmd) #> outFile.toFile run) exitValue()
-
-        val json = new String(Files.readAllBytes(outFile), "utf-8")
-        Logger.info("Watson response: '" + json + "'")
-        ClassifyResponse.fromString(json)
-      }
-    }
-
-//    acceptLang.foldLeft(
-//      ws.url(Url + "/v3/classify?api_key=" + apiKey + "&version=" + apiVersion)
-//    ) { (req, lang) => req.withHeaders("Accept-Language" -> lang.code) }.post(
-//      Source(
-//        List(
-//          FilePart(
-//            "images_file",
-//            imageFile.getFileName().toString,
-//            None,
-//            FileIO.fromFile(imageFile.toFile)
-//          )
-//        ) ++ (
-//          additionalJsonParm match {
-//            case Some(jsonf) =>
-//              List(
-//                FilePart(
-//                  "parameters",
-//                  jsonf.getFileName().toString,
-//                  None,
-//                  FileIO.fromFile(jsonf.toFile)
-//                )
-//              )
-//            case None => Nil
-//          }
-//        )
-//      )
-//    ).map(ClassifyResponse.fromResponse)
+    acceptLang.foldLeft(
+      ws.url(Url + "/v3/classify?api_key=" + apiKey + "&version=" + apiVersion)
+    ) { (req, lang) => req.withHeaders("Accept-Language" -> lang.code) }.post(
+      Source(
+        List(
+          FilePart(
+            "images_file",
+            imageFile.getFileName().toString,
+            None,
+            FileIO.fromFile(imageFile.toFile)
+          )
+        ) ++ (
+          additionalJsonParm match {
+            case Some(jsonf) =>
+              List(
+                FilePart(
+                  "parameters",
+                  jsonf.getFileName().toString,
+                  None,
+                  FileIO.fromFile(jsonf.toFile)
+                )
+              )
+            case None => Nil
+          }
+        )
+      )
+    ).map(ClassifyResponse.fromResponse)
   }
 }
 
