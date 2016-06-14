@@ -1,6 +1,9 @@
 package com.ruimo.playmodule.watson.visualrecognition3
 
-import java.nio.file.Path
+import java.nio.charset.{Charset, StandardCharsets}
+
+import scala.sys.process.Process
+import java.nio.file.{Path, Files}
 import javax.inject.Inject
 
 import akka.stream.scaladsl.{FileIO, Source}
@@ -14,6 +17,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
 import play.api.libs.functional.syntax._
+import com.ruimo.scoins.PathUtil.withTempFile
 
 class WatsonVisualRecognition3 @Inject() (ws: WSClient, conf: Configuration) {
   val Url: String = stripTrailingSlash(
@@ -37,33 +41,50 @@ class WatsonVisualRecognition3 @Inject() (ws: WSClient, conf: Configuration) {
     additionalJsonParm: Option[Path] = None,
     acceptLang: Option[AcceptLanguage] = None
   ): Future[Try[ClassifyResponse]] = {
-    acceptLang.foldLeft(
-      ws.url(Url + "/v3/classify?api_key=" + apiKey + "&version=" + apiVersion)
-    ) { (req, lang) => req.withHeaders("Accept-Language" -> lang.code) }.post(
-      Source(
-        List(
-          FilePart(
-            "images_file",
-            imageFile.getFileName().toString,
-            None,
-            FileIO.fromFile(imageFile.toFile)
-          )
-        ) ++ (
-          additionalJsonParm match {
-            case Some(jsonf) =>
-              List(
-                FilePart(
-                  "parameters",
-                  jsonf.getFileName().toString,
-                  Some("application/json"),
-                  FileIO.fromFile(jsonf.toFile)
-                )
-              )
-            case None => Nil
-          }
-        )
-      )
-    ).map(ClassifyResponse.fromResponse)
+    // Temporary solution. Watson visual recognition classify API report error if there is no content-length header...
+    scala.concurrent.Future {
+      val cmd =
+        s"""curl -X POST -F "images_file=@${imageFile.toAbsolutePath}"""" +
+      additionalJsonParm.map { pf => s"""-F "parameters=@${pf.toAbsolutePath}""""}.getOrElse("") +
+      s""" ${Url}/v3/classify?api_key=${apiKey}&version=${apiVersion}"""
+      Logger.info("Invoking '" + cmd + "'")
+
+      withTempFile(prefix = None, suffix = Some(".json")) { outFile =>
+        (Process(cmd) #> outFile.toFile run) exitValue()
+
+        val json = new String(Files.readAllBytes(outFile), "utf-8")
+        Logger.info("Watson response: '" + json + "'")
+        ClassifyResponse.fromString(json)
+      }
+    }
+
+//    acceptLang.foldLeft(
+//      ws.url(Url + "/v3/classify?api_key=" + apiKey + "&version=" + apiVersion)
+//    ) { (req, lang) => req.withHeaders("Accept-Language" -> lang.code) }.post(
+//      Source(
+//        List(
+//          FilePart(
+//            "images_file",
+//            imageFile.getFileName().toString,
+//            None,
+//            FileIO.fromFile(imageFile.toFile)
+//          )
+//        ) ++ (
+//          additionalJsonParm match {
+//            case Some(jsonf) =>
+//              List(
+//                FilePart(
+//                  "parameters",
+//                  jsonf.getFileName().toString,
+//                  None,
+//                  FileIO.fromFile(jsonf.toFile)
+//                )
+//              )
+//            case None => Nil
+//          }
+//        )
+//      )
+//    ).map(ClassifyResponse.fromResponse)
   }
 }
 
