@@ -44,8 +44,8 @@ class WatsonVisualRecognition3 @Inject() (ws: WSClient, conf: Configuration) {
     // Temporary solution. Watson visual recognition classify API report error if there is no content-length header...
     scala.concurrent.Future {
       val cmd =
-        s"""curl -X POST -F "images_file=@${imageFile.toAbsolutePath}" """ +
-      additionalJsonParm.map { pf => s"""-F "parameters=@${pf.toAbsolutePath}""""}.getOrElse("") +
+        s"""curl -X POST -F images_file=@${imageFile.toAbsolutePath} """ +
+      additionalJsonParm.map { pf => s"""-F parameters=@${pf.toAbsolutePath}"""}.getOrElse("") +
       s""" ${Url}/v3/classify?api_key=${apiKey}&version=${apiVersion}"""
       Logger.info("Invoking '" + cmd + "'")
 
