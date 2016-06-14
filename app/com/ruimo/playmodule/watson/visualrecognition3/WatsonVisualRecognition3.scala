@@ -21,9 +21,6 @@ class WatsonVisualRecognition3 @Inject() (ws: WSClient, conf: Configuration) {
       throw new Error("Cannot find 'watson.visualRecognition.url' in application.conf")
     )
   )
-  val ApiKey = conf.getString("watson.visualRecognition.apiKey").getOrElse(
-    throw new Error("Cannot find 'watson.visualRecognition.url' in application.conf")
-  )
   val Ver = "v3"
 
   @tailrec private def stripTrailingSlash(path: String): String =
@@ -46,7 +43,7 @@ class WatsonVisualRecognition3 @Inject() (ws: WSClient, conf: Configuration) {
       Source(
         List(
           FilePart(
-            "image_file",
+            "images_file",
             imageFile.getFileName().toString,
             None,
             FileIO.fromFile(imageFile.toFile)

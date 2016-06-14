@@ -1,3 +1,5 @@
+package com.ruimo.playmodule.watson.visualrecognition3
+
 import com.ruimo.playmodule.watson.visualrecognition3.ClassifyResponse
 import org.specs2.mutable.Specification
 import com.ruimo.scoins.Scoping._
