@@ -48,16 +48,20 @@ class WatsonVisualRecognition3 @Inject() (ws: WSClient, conf: Configuration) {
             None,
             FileIO.fromFile(imageFile.toFile)
           )
-        ) ++ additionalJsonParm.map { jsonf =>
-          List(
-            FilePart(
-              "parameters",
-              jsonf.getFileName().toString,
-              Some("application/json"),
-              FileIO.fromFile(jsonf.toFile)
-            )
-          )
-        }.getOrElse(Nil)
+        ) ++ (
+          additionalJsonParm match {
+            case Some(jsonf) =>
+              List(
+                FilePart(
+                  "parameters",
+                  jsonf.getFileName().toString,
+                  Some("application/json"),
+                  FileIO.fromFile(jsonf.toFile)
+                )
+              )
+            case None => Nil
+          }
+        )
       )
     ).map(ClassifyResponse.fromResponse)
   }
