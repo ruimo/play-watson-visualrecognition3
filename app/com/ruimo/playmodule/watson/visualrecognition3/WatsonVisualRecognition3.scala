@@ -39,12 +39,14 @@ class WatsonVisualRecognition3 @Inject() (ws: WSClient, conf: Configuration) {
     apiVersion: String,
     imageFile: Path,
     additionalJsonParm: Option[Path] = None,
-    acceptLang: Option[AcceptLanguage] = None
+    acceptLang: Option[AcceptLanguage] = None,
+    optOut: Boolean = true,
   ): Future[Try[ClassifyResponse]] = {
     // Temporary solution. Watson visual recognition classify API report error if there is no content-length header...
     scala.concurrent.Future {
+      val headers = if (optOut) "-H X-Watson-Learning-Opt-Out: true" else ""
       val cmd =
-        s"""curl -X POST -F images_file=@${imageFile.toAbsolutePath} """ +
+        s"""curl -X POST ${headers} -F images_file=@${imageFile.toAbsolutePath} """ +
       additionalJsonParm.map { pf => s"""-F parameters=@${pf.toAbsolutePath}"""}.getOrElse("") +
       s""" ${Url}/v3/classify?api_key=${apiKey}&version=${apiVersion}"""
       Logger.info("Invoking '" + cmd + "'")
