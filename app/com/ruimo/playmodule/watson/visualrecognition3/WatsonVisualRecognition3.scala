@@ -46,7 +46,7 @@ class WatsonVisualRecognition3 @Inject() (ws: WSClient, conf: Configuration) {
     scala.concurrent.Future {
       val headers = if (optOut) "-H X-Watson-Learning-Opt-Out:true" else ""
       val cmd =
-        s"""curl -u "apikey:${apiKey}" -X POST ${headers} -F images_file=@${imageFile.toAbsolutePath} """ +
+        s"""curl -X POST ${headers} -u apikey:${apiKey} -F images_file=@${imageFile.toAbsolutePath} """ +
       additionalJsonParm.map { pf => s"""-F parameters=@${pf.toAbsolutePath}"""}.getOrElse("") +
       s""" ${Url}/v3/classify?version=${apiVersion}"""
       Logger.info("Invoking '" + cmd + "'")
