@@ -46,9 +46,9 @@ class WatsonVisualRecognition3 @Inject() (ws: WSClient, conf: Configuration) {
     scala.concurrent.Future {
       val headers = if (optOut) "-H X-Watson-Learning-Opt-Out:true" else ""
       val cmd =
-        s"""curl -X POST ${headers} -F images_file=@${imageFile.toAbsolutePath} """ +
+        s"""curl -u "apikey:${apiKey}" -X POST ${headers} -F images_file=@${imageFile.toAbsolutePath} """ +
       additionalJsonParm.map { pf => s"""-F parameters=@${pf.toAbsolutePath}"""}.getOrElse("") +
-      s""" ${Url}/v3/classify?api_key=${apiKey}&version=${apiVersion}"""
+      s""" ${Url}/v3/classify?version=${apiVersion}"""
       Logger.info("Invoking '" + cmd + "'")
 
       withTempFile(prefix = None, suffix = Some(".json")) { outFile =>
@@ -58,7 +58,6 @@ class WatsonVisualRecognition3 @Inject() (ws: WSClient, conf: Configuration) {
         Logger.info("Watson response: '" + json + "'")
         ClassifyResponse.fromString(json)
       }
-    }
 
 //    acceptLang.foldLeft(
 //      ws.url(Url + "/v3/classify?api_key=" + apiKey + "&version=" + apiVersion)
@@ -87,6 +86,7 @@ class WatsonVisualRecognition3 @Inject() (ws: WSClient, conf: Configuration) {
 //        )
 //      )
 //    ).map(ClassifyResponse.fromResponse)
+    }
   }
 }
 
