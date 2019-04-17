@@ -20,8 +20,9 @@ import play.api.libs.functional.syntax._
 import com.ruimo.scoins.PathUtil.withTempFile
 
 class WatsonVisualRecognition3 @Inject() (ws: WSClient, conf: Configuration) {
+  val logger = Logger(getClass)
   val Url: String = stripTrailingSlash(
-    conf.getString("watson.visualRecognition.url").getOrElse(
+    conf.getOptional[String]("watson.visualRecognition.url").getOrElse(
       throw new Error("Cannot find 'watson.visualRecognition.url' in application.conf")
     )
   )
@@ -49,13 +50,13 @@ class WatsonVisualRecognition3 @Inject() (ws: WSClient, conf: Configuration) {
         s"""curl -X POST ${headers} -u apikey:${apiKey} -F images_file=@${imageFile.toAbsolutePath} """ +
       additionalJsonParm.map { pf => s"""-F parameters=@${pf.toAbsolutePath}"""}.getOrElse("") +
       s""" ${Url}/v3/classify?version=${apiVersion}"""
-      Logger.info("Invoking '" + cmd + "'")
+      logger.info("Invoking '" + cmd + "'")
 
       withTempFile(prefix = None, suffix = Some(".json")) { outFile =>
         (Process(cmd) #> outFile.toFile run) exitValue()
 
         val json = new String(Files.readAllBytes(outFile), "utf-8")
-        Logger.info("Watson response: '" + json + "'")
+        logger.info("Watson response: '" + json + "'")
         ClassifyResponse.fromString(json)
       }
 
@@ -91,6 +92,8 @@ class WatsonVisualRecognition3 @Inject() (ws: WSClient, conf: Configuration) {
 }
 
 object ClassifyResponse {
+  val logger = Logger(getClass)
+
   implicit val classifiedClassReads: Reads[ClassifiedClass] = (
     (JsPath \ "class").read[String] and
       (JsPath \ "score").read[Double]
@@ -115,10 +118,10 @@ object ClassifyResponse {
     )(ClassifyResponse.apply _)
 
   def fromResponse(resp: WSResponse): Try[ClassifyResponse] = {
-    Logger.info("Watson visual recognition status = " + resp.status + ", statusText = '" + resp.statusText + "'")
+    logger.info("Watson visual recognition status = " + resp.status + ", statusText = '" + resp.statusText + "'")
     if (resp.status != 200) Failure(new WatsonException("Watson Visual Recognition", resp.status, resp.statusText))
     else {
-      Logger.info("Watson json response: '" + resp.body + "'")
+      logger.info("Watson json response: '" + resp.body + "'")
       Success(
         ClassifyResponse.fromString(resp.body)
       )
